@@ -1,0 +1,362 @@
+{
+  "name": "AI EMAIL SUPPORT AGENT",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": []
+        },
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ],
+          "readStatus": "both"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -128,
+        288
+      ],
+      "id": "d38b10de-aacc-4a6c-8fab-62d04d6490dd",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9nOuZ9ROkL6M7Abk",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ec42a19f-3ccb-4024-aa4d-35a971455ce0",
+              "name": "sender",
+              "value": "={{ $json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "884e556b-70a4-4d9b-8e61-b78425e6dd94",
+              "name": "subject",
+              "value": "={{ $json.Subject }}",
+              "type": "string"
+            },
+            {
+              "id": "141dbdaa-6af4-461c-933b-a399a47e6813",
+              "name": "body",
+              "value": "={{ $json.snippet }}",
+              "type": "string"
+            },
+            {
+              "id": "e1a99d87-e903-4a13-8fd9-b826220295f9",
+              "name": "date",
+              "value": "={{ $json.internalDate }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        288
+      ],
+      "id": "e5668e6c-31c7-4ed2-a304-f26e9c87510c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-nano",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-NANO"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Analiza este email de soporte.\nDevuelve un JSON con este formato:\n{\n\"categoria\": \"\",\n\"prioridad\": \"\",\n\"respuesta\": \"{{ $json.body }}\",\n\"Email\": \"{{ $json.sender }}\"\n}\n\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 800,
+          "textFormat": {
+            "textOptions": {
+              "type": "text"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        288
+      ],
+      "id": "c7ce1390-c64a-4eae-889f-8f365e9dd821",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "phFuFxX6MoveqweM",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9b69aaf7-6173-482f-b5f9-f9ae9d9a9a97",
+              "leftValue": "={{ $json.priority }}",
+              "rightValue": "alta",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        288
+      ],
+      "id": "8332c382-023b-4f2f-8f58-f6b2480b6909",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Edit Fields').item.json.sender }}",
+        "subject": "={{ $('Edit Fields').item.json.subject }}",
+        "emailType": "text",
+        "message": "Hola,\n\nGracias por contactar con soporte.\nHemos recibido tu solicitud y nuestro \nequipo la revisará lo antes posible.\n\nSaludos.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        192
+      ],
+      "id": "b60f990d-b24e-4caf-bb90-72022ef1bbac",
+      "name": "Send a message",
+      "webhookId": "089cda1c-3afd-4b20-bc6b-d5e31a6cb9f3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9nOuZ9ROkL6M7Abk",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7014633120",
+        "text": "=Ticket urgente detectado\n\n{{ $('Edit Fields').item.json.subject }}\n{{ $('Edit Fields').item.json.sender }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        384
+      ],
+      "id": "ce823d5d-cdfb-4be2-b391-6a8c444b45ea",
+      "name": "Send a text message",
+      "webhookId": "43910ee8-e36e-4807-93a8-85ed695683df",
+      "credentials": {
+        "telegramApi": {
+          "id": "zNn7l95nncP9S23Z",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "36afdcfc-98f9-8068-a435-ec3f7c0bc50b",
+          "mode": "list",
+          "cachedResultName": "SOPORTE -TICKETS",
+          "cachedResultUrl": "https://www.notion.so/36afdcfc98f98068a435ec3f7c0bc50b"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Title|title",
+              "title": "={{ $('Edit Fields').item.json.subject }}"
+            },
+            {
+              "key": "Customer|rich_text",
+              "textContent": "={{ $('Edit Fields').item.json.sender }}"
+            },
+            {
+              "key": "Priority|select",
+              "selectValue": "={{ $('Edit Fields1').item.json.priority }}"
+            },
+            {
+              "key": "Category|select",
+              "selectValue": "={{ $('Edit Fields1').item.json.category }}"
+            },
+            {
+              "key": "Status|status",
+              "statusValue": "In progress"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        288
+      ],
+      "id": "c06f7722-56d3-4076-9566-b008e4a12d5c",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "eldHMQlKzU7JQTKE",
+          "name": "Notion account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"priority\": \"HIGH\",\n  \"category\": \"URGENT\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        288
+      ],
+      "id": "3cdb2144-dd80-4db1-99bc-5040a14d19f1",
+      "name": "Edit Fields1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "763760a3-8dfb-4d15-9018-8049465a07e1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33821b72dae919503d680e3ddc300734d9ecf45f64776fd52838d87d5889b7be"
+  },
+  "id": "dDYQypDPKkU0vW3P",
+  "tags": []
+}
